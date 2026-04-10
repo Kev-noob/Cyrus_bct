@@ -119,6 +119,9 @@ namespace Cyrus_bct
 
         }
 
-        
+        private void home_panel_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
     }
 }

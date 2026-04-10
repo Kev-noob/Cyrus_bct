@@ -1,4 +1,6 @@
-﻿using MySql.Data.MySqlClient;
+﻿using Cyrus_bct.Models;
+using Cyrus_bct.INS;
+using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -24,9 +26,9 @@ namespace Cyrus_bct
         {
             string connStr = "server=localhost;" +
                              "port=3306;" +
-                             "database=my_db;" +
+                             "database=bct_db;" +
                              "user=root;" +
-                             "password=root;";
+                             "password=;";
             return new MySqlConnection(connStr);
         }//<----
 
@@ -114,14 +116,14 @@ namespace Cyrus_bct
                 }//<----
 
 
-                string sql = @"INSERT INTO inputs (student_id, full_name, course, year_level, password)
-                             VALUES(@student_id, @full_name, @course, @year_level, @password)";
+                string sql = @"INSERT INTO inputs (student_id, full_name, year_level, password)
+                             VALUES(@student_id, @full_name, @year_level, @password)";
 
                 using (MySqlCommand cmd = new MySqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@student_id", studentId);
                     cmd.Parameters.AddWithValue("@full_name", fullName);
-                    cmd.Parameters.AddWithValue("@course", course);
+                    
                     cmd.Parameters.AddWithValue("@year_level", yearLevel);
                     cmd.Parameters.AddWithValue("@password", password);
                     cmd.ExecuteNonQuery();
@@ -218,9 +220,9 @@ namespace Cyrus_bct
                 RegConEye_btn.Image = Properties.Resources.off_eye;
             }
         }
-        private void button4_Click(object sender, EventArgs e)
+        private void Login_eye_Click(object sender, EventArgs e)
         {
-            if (login_password_txtBox.PasswordChar == '•') 
+            if (login_password_txtBox.PasswordChar == '•')
             {
                 login_password_txtBox.PasswordChar = '\0';
                 Login_eye.Image = Properties.Resources.open_eye;
@@ -231,7 +233,127 @@ namespace Cyrus_bct
                 Login_eye.Image = Properties.Resources.off_eye;
             }
         }
+        private void login_student_Click(object sender, EventArgs e)
+        {
+            string studentId = login_id_txtBox.Text.Trim();
+            string password = login_password_txtBox.Text;
+
+            //CHECK FOR EMPTY TEXTBOX---->
+            if (studentId == "" || password == "")
+            {
+                MessageBox.Show("Please complete inputs.");
+                return;
+            }//<----
 
 
+            try
+            {
+                using (MySqlConnection conn = GetConnection())
+                {
+                    conn.Open();
+                    string sql = "SELECT student_id, full_name FROM inputs WHERE student_id=@student_id AND password=@password";
+                    using (MySqlCommand cmd = new MySqlCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@student_id", studentId);
+                        cmd.Parameters.AddWithValue("@password", password);
+
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                string id = reader.GetString("student_id");
+                                string name = reader.GetString("full_name");
+
+
+                                //GO TO HOME SCREEN
+                                Form2 loginForm = new Form2();
+                                this.Hide();
+                                loginForm.Show();
+                            }
+                            else
+                            {
+                                MessageBox.Show("Invalid Student ID or Password.");
+                            }
+                        }
+                    }
+                }
+
+            }
+            catch (MySqlException ex)
+            {
+                MessageBox.Show("Database error: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message);
+            }
+        }
+        private void student_Click(object sender, EventArgs e)
+        {
+            reg_panel.BringToFront();
+        }
+
+        private void InsReg_btn_Click(object sender, EventArgs e)
+        {
+            INS_reg.BringToFront();
+        }
+
+        private void button4_Click_1(object sender, EventArgs e)
+        {
+            student_login.BringToFront();
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            instructor_login.BringToFront();
+        }
+        ///--------------------------------------------------------------------------------INS REG-------------------------------------------------------------------------------
+        private void INS_FinReg_Click(object sender, EventArgs e)
+        {
+            string Ins_name = INS_name.Text.Trim();
+            string Ins_email = INS_email.Text.Trim();
+            string Ins_phone = INS_phone.Text.Trim();
+            string Ins_department = INS_department.Text.Trim();
+
+            string password = INS_pass.Text;
+            string confirmPassword = INS_cnfrm_pass.Text;
+
+            //input & placeholder verification-->
+            if (INS_name.Text == "" ||
+                   INS_email.Text == "" ||
+                   INS_phone.Text == "" ||
+                   INS_department.Text == "" ||
+
+                   INS_pass.Text == "" ||
+                   INS_cnfrm_pass.Text == "")
+            {
+                MessageBox.Show("Please complete inputs!");
+                return;
+            }//<--
+
+
+            //PASSWORD CHECKER-->
+            if (password != confirmPassword)
+            {
+                MessageBox.Show("PasswordS does not match!");
+                return;
+            }//<---
+
+
+
+            Instructor instructor = new Instructor
+            {
+                FullName = INS_name.Text.Trim(),
+                Email = INS_email.Text.Trim(),
+                Phone = INS_phone.Text.Trim(),
+                Department = INS_department.Text.Trim(),
+                Password = INS_pass.Text.Trim()
+            };
+
+            DBHelper.PendingINS(instructor);
+
+
+        }
+        
     }
 }
